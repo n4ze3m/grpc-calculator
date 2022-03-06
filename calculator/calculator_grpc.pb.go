@@ -25,6 +25,7 @@ type CalculatorServiceClient interface {
 	Calculate(ctx context.Context, in *CalculatorRequest, opts ...grpc.CallOption) (*CalculatorResponse, error)
 	Multiply(ctx context.Context, in *MultiplicationRequest, opts ...grpc.CallOption) (CalculatorService_MultiplyClient, error)
 	Average(ctx context.Context, opts ...grpc.CallOption) (CalculatorService_AverageClient, error)
+	Double(ctx context.Context, opts ...grpc.CallOption) (CalculatorService_DoubleClient, error)
 }
 
 type calculatorServiceClient struct {
@@ -110,6 +111,37 @@ func (x *calculatorServiceAverageClient) CloseAndRecv() (*AverageResponse, error
 	return m, nil
 }
 
+func (c *calculatorServiceClient) Double(ctx context.Context, opts ...grpc.CallOption) (CalculatorService_DoubleClient, error) {
+	stream, err := c.cc.NewStream(ctx, &CalculatorService_ServiceDesc.Streams[2], "/calculator.CalculatorService/Double", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &calculatorServiceDoubleClient{stream}
+	return x, nil
+}
+
+type CalculatorService_DoubleClient interface {
+	Send(*DoubleRequest) error
+	Recv() (*DoubleResponse, error)
+	grpc.ClientStream
+}
+
+type calculatorServiceDoubleClient struct {
+	grpc.ClientStream
+}
+
+func (x *calculatorServiceDoubleClient) Send(m *DoubleRequest) error {
+	return x.ClientStream.SendMsg(m)
+}
+
+func (x *calculatorServiceDoubleClient) Recv() (*DoubleResponse, error) {
+	m := new(DoubleResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // CalculatorServiceServer is the server API for CalculatorService service.
 // All implementations must embed UnimplementedCalculatorServiceServer
 // for forward compatibility
@@ -117,6 +149,7 @@ type CalculatorServiceServer interface {
 	Calculate(context.Context, *CalculatorRequest) (*CalculatorResponse, error)
 	Multiply(*MultiplicationRequest, CalculatorService_MultiplyServer) error
 	Average(CalculatorService_AverageServer) error
+	Double(CalculatorService_DoubleServer) error
 	mustEmbedUnimplementedCalculatorServiceServer()
 }
 
@@ -132,6 +165,9 @@ func (UnimplementedCalculatorServiceServer) Multiply(*MultiplicationRequest, Cal
 }
 func (UnimplementedCalculatorServiceServer) Average(CalculatorService_AverageServer) error {
 	return status.Errorf(codes.Unimplemented, "method Average not implemented")
+}
+func (UnimplementedCalculatorServiceServer) Double(CalculatorService_DoubleServer) error {
+	return status.Errorf(codes.Unimplemented, "method Double not implemented")
 }
 func (UnimplementedCalculatorServiceServer) mustEmbedUnimplementedCalculatorServiceServer() {}
 
@@ -211,6 +247,32 @@ func (x *calculatorServiceAverageServer) Recv() (*AverageRequest, error) {
 	return m, nil
 }
 
+func _CalculatorService_Double_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(CalculatorServiceServer).Double(&calculatorServiceDoubleServer{stream})
+}
+
+type CalculatorService_DoubleServer interface {
+	Send(*DoubleResponse) error
+	Recv() (*DoubleRequest, error)
+	grpc.ServerStream
+}
+
+type calculatorServiceDoubleServer struct {
+	grpc.ServerStream
+}
+
+func (x *calculatorServiceDoubleServer) Send(m *DoubleResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func (x *calculatorServiceDoubleServer) Recv() (*DoubleRequest, error) {
+	m := new(DoubleRequest)
+	if err := x.ServerStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // CalculatorService_ServiceDesc is the grpc.ServiceDesc for CalculatorService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -232,6 +294,12 @@ var CalculatorService_ServiceDesc = grpc.ServiceDesc{
 		{
 			StreamName:    "Average",
 			Handler:       _CalculatorService_Average_Handler,
+			ClientStreams: true,
+		},
+		{
+			StreamName:    "Double",
+			Handler:       _CalculatorService_Double_Handler,
+			ServerStreams: true,
 			ClientStreams: true,
 		},
 	},

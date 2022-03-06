@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"time"
 
 	cl "github.com/n4ze3m/grpc-calculator/calculator"
 
@@ -32,6 +33,8 @@ func main() {
 	multiply(c, 7)
 	// client stream
 	average(c)
+	// bi directional
+	double(c)
 }
 
 func calculator(c cl.CalculatorServiceClient, lhs int64, rhs int64, operator string) {
@@ -52,7 +55,6 @@ func calculator(c cl.CalculatorServiceClient, lhs int64, rhs int64, operator str
 
 	fmt.Println(res.Result)
 }
-
 
 func multiply(c cl.CalculatorServiceClient, num int64) {
 	req := &cl.MultiplicationRequest{
@@ -81,7 +83,7 @@ func multiply(c cl.CalculatorServiceClient, num int64) {
 }
 
 func average(c cl.CalculatorServiceClient) {
-	 stream, err := c.Average(context.Background())
+	stream, err := c.Average(context.Background())
 
 	if err != nil {
 		fmt.Println(err)
@@ -102,4 +104,49 @@ func average(c cl.CalculatorServiceClient) {
 	}
 
 	fmt.Println(res.Result)
+}
+
+func double(c cl.CalculatorServiceClient) {
+
+	stream, err := c.Double(context.Background())
+
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	// channel
+	ch := make(chan struct{})
+
+	// send
+
+	go func() {
+		for i := 1; i < 11; i++ {
+			msg := &cl.DoubleRequest{
+				Number: int64(i),
+			}
+
+			stream.Send(msg)
+			time.Sleep( 3000 * time.Millisecond)
+		}
+		stream.CloseSend()
+	}()
+	// recieve
+	go func() {
+		for {
+			msg, err := stream.Recv()
+
+			if err == io.EOF {
+				break
+			}
+
+			if err != nil {
+				fmt.Println(err)
+			}
+
+			fmt.Println(msg.Result)
+		}
+		close(ch)
+	}()
+
+	<-ch
 }

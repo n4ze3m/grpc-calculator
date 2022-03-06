@@ -73,6 +73,23 @@ func (*server) Average(stream cl.CalculatorService_AverageServer) error {
 	}
 }
 
+func (*server) Double(stream cl.CalculatorService_DoubleServer) error {
+	for {
+		in, err := stream.Recv()
+		if err == io.EOF {
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+
+		res := &cl.DoubleResponse{
+			Result: in.GetNumber() * 2,
+		}
+		stream.Send(res)
+	}
+}
+
 func main() {
 	listen, err := net.Listen("tcp", ":50051")
 	if err != nil {
