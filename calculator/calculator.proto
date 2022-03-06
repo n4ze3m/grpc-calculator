@@ -19,7 +19,16 @@ message CalculatorResponse {
     int64 result = 1;
 };
 
+message MultiplicationRequest {
+    int64 number = 1;
+};
+
+message MultiplicationResponse {
+    string result = 1;
+};
+
 
 service CalculatorService {
     rpc Calculate(CalculatorRequest) returns (CalculatorResponse) {}
+    rpc Multiply(MultiplicationRequest) returns (stream MultiplicationResponse) {}
 }

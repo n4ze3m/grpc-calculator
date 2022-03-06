@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"net"
+	"time"
 
 	cl "github.com/n4ze3m/grpc-calculator/calculator"
 	"google.golang.org/grpc"
@@ -12,7 +14,7 @@ type server struct {
 	cl.UnimplementedCalculatorServiceServer
 }
 
-func (s *server) Calculate(ctx context.Context, in *cl.CalculatorRequest) (*cl.CalculatorResponse, error) {
+func (*server) Calculate(ctx context.Context, in *cl.CalculatorRequest) (*cl.CalculatorResponse, error) {
 	lhs := in.GetCalculator().Lhs
 	rhs := in.GetCalculator().Rhs
 
@@ -34,6 +36,22 @@ func (s *server) Calculate(ctx context.Context, in *cl.CalculatorRequest) (*cl.C
 	return &cl.CalculatorResponse{
 		Result: result,
 	}, nil
+}
+
+
+func (*server) Multiply( in *cl.MultiplicationRequest,stream cl.CalculatorService_MultiplyServer) error {
+	num := in.Number
+
+	for i := 1; i < 11; i++ {
+		result := fmt.Sprintf("%d * %d = %d", num, i , int(num) * i)
+		res := &cl.MultiplicationResponse{
+			Result: result,
+		}
+		stream.Send(res)
+		time.Sleep(3000 * time.Millisecond)
+	}
+
+	return nil
 }
 
 func main() {
