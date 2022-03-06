@@ -30,6 +30,8 @@ func main() {
 	// server stream
 	multiply(c, 5)
 	multiply(c, 7)
+	// client stream
+	average(c)
 }
 
 func calculator(c cl.CalculatorServiceClient, lhs int64, rhs int64, operator string) {
@@ -76,4 +78,28 @@ func multiply(c cl.CalculatorServiceClient, num int64) {
 
 		fmt.Println(msg.Result)
 	}
+}
+
+func average(c cl.CalculatorServiceClient) {
+	 stream, err := c.Average(context.Background())
+
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	for i := 1; i < 11; i++ {
+		msg := &cl.AverageRequest{
+			Number: int64(i),
+		}
+
+		stream.Send(msg)
+	}
+
+	res, err := stream.CloseAndRecv()
+
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	fmt.Println(res.Result)
 }

@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"io"
 	"net"
 	"time"
 
@@ -52,6 +53,24 @@ func (*server) Multiply( in *cl.MultiplicationRequest,stream cl.CalculatorServic
 	}
 
 	return nil
+}
+
+func (*server) Average(stream cl.CalculatorService_AverageServer) error {
+	var sum int64
+	var count int64
+	for {
+		in, err := stream.Recv()
+		if err == io.EOF {
+			return stream.SendAndClose(&cl.AverageResponse{
+				Result: sum / count,
+			})
+		}
+		if err != nil {
+			return err
+		}
+		sum += in.GetNumber()
+		count++
+	}
 }
 
 func main() {
